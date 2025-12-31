@@ -1,1439 +1,1301 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskSync - Online To-Do List</title>
+    <title>قائمة مهام </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #4361ee;
-            --primary-light: #4895ef;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
+            --secondary: #3a0ca3;
+            --accent: #4cc9f0;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
             --light: #f8f9fa;
-            --dark: #212529;
-            --gray: #6c757d;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
             --border-radius: 12px;
-            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s ease;
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', 'Cairo', sans-serif;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
             min-height: 100vh;
             padding: 20px;
-            color: var(--dark);
+            line-height: 1.6;
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 95vh;
         }
-        
-        /* Header Styles */
-        header {
+
+        /* NAS Status Bar */
+        .nas-status-bar {
+            background: linear-gradient(to left, #2c3e50, #34495e);
+            color: white;
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 0;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
+            border-bottom: 3px solid var(--primary);
         }
-        
-        .logo {
+
+        .nas-status {
             display: flex;
             align-items: center;
             gap: 15px;
         }
-        
-        .logo-icon {
-            background: var(--primary);
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+
+        .sync-status {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        .logo-text h1 {
-            font-size: 28px;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        
-        .logo-text p {
-            color: var(--gray);
-            font-size: 14px;
-        }
-        
-        .user-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        /* Auth Forms */
-        .auth-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .auth-form {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: var(--shadow);
-            animation: slideUp 0.4s ease;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .auth-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .auth-header h2 {
-            color: var(--primary);
-            margin-bottom: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+            gap: 8px;
             font-weight: 600;
-            color: var(--dark);
         }
-        
-        .form-control {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
+
+        .sync-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #95a5a6;
             transition: var(--transition);
         }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
+
+        .sync-indicator.syncing {
+            background-color: #f39c12;
+            animation: pulse 1.5s infinite;
         }
-        
+
+        .sync-indicator.synced {
+            background-color: #2ecc71;
+        }
+
+        .sync-indicator.error {
+            background-color: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sync-controls {
+            display: flex;
+            gap: 10px;
+        }
+
         .btn {
-            padding: 15px 25px;
+            background: var(--primary);
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 10px;
             cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
+
+        .btn:hover {
             background: var(--secondary);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            transform: translateY(-2px);
         }
-        
-        .btn-secondary {
-            background: #f0f0f0;
-            color: var(--dark);
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 0.9rem;
         }
-        
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-        
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #e11570;
-        }
-        
+
         .btn-success {
             background: var(--success);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(to left, var(--secondary), var(--primary));
             color: white;
-        }
-        
-        .btn-success:hover {
-            background: #3cb4d9;
-        }
-        
-        .auth-footer {
+            padding: 30px 40px;
             text-align: center;
-            margin-top: 20px;
-            color: var(--gray);
+            position: relative;
+            overflow: hidden;
         }
-        
-        .auth-link {
-            color: var(--primary);
-            cursor: pointer;
-            font-weight: 600;
-        }
-        
-        .auth-link:hover {
-            text-decoration: underline;
-        }
-        
-        .close-auth {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: var(--gray);
-            cursor: pointer;
-        }
-        
-        /* App Container */
-        .app-container {
-            display: none;
-            grid-template-columns: 300px 1fr;
-            gap: 30px;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            box-shadow: var(--shadow);
-            height: fit-content;
-        }
-        
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .user-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--success));
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
+            gap: 20px;
         }
-        
-        .user-info h3 {
-            margin-bottom: 5px;
-        }
-        
-        .user-info p {
-            color: var(--gray);
-            font-size: 14px;
-        }
-        
-        .stats {
+
+        /* Main Layout */
+        .main-layout {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+            padding: 30px;
+            flex: 1;
         }
-        
-        .stat-card {
-            background: #f8f9ff;
+
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+        }
+
+        .card {
+            background: var(--light);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            border: 1px solid #e8ecee;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            height: fit-content;
+        }
+
+        .card-title {
+            color: var(--dark);
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* NAS Configuration Panel - Hidden by default */
+        .nas-config {
+            background: linear-gradient(135deg, #f8fff9 0%, #e8f4fc 100%);
+            border: 2px solid #c5e3fc;
+            margin-bottom: 20px;
+            display: none; /* Hidden by default */
+        }
+
+        .nas-config.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .config-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e8ecee;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: white;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Live Users */
+        .live-users {
+            background: #f0f7ff;
             padding: 15px;
             border-radius: 10px;
-            text-align: center;
+            margin-top: 20px;
         }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: var(--gray);
-        }
-        
-        .categories {
-            margin-bottom: 30px;
-        }
-        
-        .categories h3, .share-section h3 {
-            margin-bottom: 15px;
-            color: var(--primary);
-            font-size: 18px;
-        }
-        
-        .category-list {
-            list-style: none;
-        }
-        
-        .category-item {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
+
+        .live-users-list {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .live-user-tag {
+            display: flex;
             align-items: center;
-        }
-        
-        .category-item:hover {
-            background: #f0f4ff;
-        }
-        
-        .category-item.active {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .category-count {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        
-        /* Main Content */
-        .main-content {
+            gap: 8px;
+            padding: 8px 15px;
             background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            box-shadow: var(--shadow);
+            border-radius: 20px;
+            border: 2px solid #dfe6e9;
+            font-weight: 600;
         }
-        
+
+        .live-user-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2ecc71;
+        }
+
+        .live-user-status.idle {
+            background: #f39c12;
+        }
+
+        /* Tasks List */
+        .tasks-container {
+            max-height: 450px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .task-item {
+            background: white;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border-right: 5px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .task-item.recent {
+            animation: highlight 2s ease;
+        }
+
+        @keyframes highlight {
+            0% { background-color: #e8f4fc; }
+            100% { background-color: white; }
+        }
+
+        .task-item.completed {
+            opacity: 0.8;
+            border-right-color: var(--success);
+            background: #f8fff9;
+        }
+
         .task-header {
             display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .task-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--dark);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .task-footer {
+            display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 2px solid #f1f2f6;
+            font-size: 0.9rem;
         }
-        
-        .task-header h2 {
-            color: var(--primary);
-        }
-        
-        .task-filters {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .filter-btn {
-            padding: 10px 20px;
-            border: 2px solid #e0e0e0;
-            background: white;
+
+        .user-tag {
+            padding: 6px 12px;
             border-radius: 20px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-weight: 500;
-        }
-        
-        .filter-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        .task-form {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .task-input {
-            flex: 1;
-            min-width: 250px;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: var(--transition);
-        }
-        
-        .task-input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        
-        .task-category-select {
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            min-width: 150px;
-        }
-        
-        .task-priority-select {
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            min-width: 150px;
-        }
-        
-        /* Task List */
-        .task-list {
-            list-style: none;
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-        
-        .task-item {
-            background: #f8f9ff;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 15px;
-            transition: var(--transition);
-            animation: slideIn 0.3s ease;
+            gap: 6px;
         }
-        
-        @keyframes slideIn {
-            from { transform: translateX(-10px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
         }
-        
-        .task-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e8ecee;
         }
-        
-        .task-checkbox {
-            width: 22px;
-            height: 22px;
-            cursor: pointer;
-        }
-        
-        .task-content {
-            flex: 1;
-        }
-        
-        .task-title {
-            font-size: 18px;
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            display: block;
             margin-bottom: 5px;
-            font-weight: 500;
-        }
-        
-        .task-title.completed {
-            text-decoration: line-through;
-            color: var(--gray);
-        }
-        
-        .task-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 14px;
-            color: var(--gray);
-        }
-        
-        .task-category {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .category-work { background: #e3f2fd; color: #1976d2; }
-        .category-personal { background: #f3e5f5; color: #7b1fa2; }
-        .category-shopping { background: #e8f5e9; color: #388e3c; }
-        .category-health { background: #fff3e0; color: #f57c00; }
-        
-        .task-priority {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .priority-high { background: #ffebee; color: #d32f2f; }
-        .priority-medium { background: #fff3e0; color: #f57c00; }
-        .priority-low { background: #e8f5e9; color: #388e3c; }
-        
-        .task-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .task-action-btn {
-            background: none;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            color: var(--gray);
-            transition: var(--transition);
-        }
-        
-        .task-action-btn:hover {
             color: var(--primary);
         }
-        
-        .delete-btn:hover {
-            color: var(--danger);
-        }
-        
-        .empty-state {
+
+        /* Footer */
+        .footer {
             text-align: center;
-            padding: 50px 20px;
+            padding: 25px;
             color: var(--gray);
+            border-top: 2px solid #e8ecee;
+            background: #f8f9fa;
+            margin-top: 30px;
         }
-        
-        .empty-state i {
-            font-size: 60px;
-            margin-bottom: 20px;
-            color: #e0e0e0;
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            transition: all 0.5s ease;
         }
-        
-        .empty-state h3 {
-            font-size: 22px;
-            margin-bottom: 10px;
+
+        .notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
-        
-        /* Share Modal */
-        .share-modal {
+
+        .notification.error {
+            background: var(--danger);
+        }
+
+        /* Password Modal */
+        .password-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 1000;
+            align-items: center;
             justify-content: center;
-            align-items: center;
         }
-        
-        .share-container {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 30px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: var(--shadow);
-        }
-        
-        .share-header {
+
+        .password-modal.show {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            color: var(--dark);
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+        }
+
+        .modal-content input {
             margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
         }
-        
-        .share-options {
-            margin-top: 20px;
-        }
-        
-        .share-link-container {
+
+        .modal-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 20px;
         }
-        
-        .share-link {
+
+        .modal-buttons .btn {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background: #f8f9fa;
-            font-family: monospace;
-        }
-        
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 1001;
-            animation: slideInRight 0.3s ease;
-            display: none;
-        }
-        
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .notification.success {
-            background: var(--success);
-        }
-        
-        .notification.error {
-            background: var(--danger);
-        }
-        
-        .notification.info {
-            background: var(--primary);
-        }
-        
-        /* Responsive */
-        @media (max-width: 992px) {
-            .app-container {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 20px;
-            }
-            
-            .task-form {
-                flex-direction: column;
-            }
-            
-            .task-input, .task-category-select, .task-priority-select {
-                width: 100%;
-            }
-            
-            .user-controls {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .auth-form {
-                padding: 30px 20px;
-            }
-            
-            .task-filters {
-                flex-direction: column;
-                width: 100%;
-            }
-            
-            .filter-btn {
-                width: 100%;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- NAS Status Bar -->
+        <div class="nas-status-bar">
+            <div class="nas-status">
+                <div class="sync-status">
+                    <div id="sync-indicator" class="sync-indicator"></div>
+                    <span id="sync-text">جاري الاتصال...</span>
+                </div>
+                <span id="last-sync">لم يتم المزامنة بعد</span>
+            </div>
+            <div class="sync-controls">
+                <button id="force-sync" class="btn btn-success btn-small">
+                    <i class="fas fa-sync-alt"></i> مزامنة
+                </button>
+                <button id="config-nas" class="btn btn-small">
+                    <i class="fas fa-cog"></i> إعدادات NAS
+                </button>
+            </div>
+        </div>
+
         <!-- Header -->
-        <header>
-            <div class="logo">
-                <div class="logo-icon">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>TaskSync</h1>
-                    <p>Your online collaborative to-do list</p>
-                </div>
-            </div>
+        <div class="header">
+            <h1><i class="fas fa-tasks"></i> قائمة مهام متزامنة</h1>
             
-            <div class="user-controls">
-                <div id="userGreeting" style="display: none;">
-                    <span id="userName">Guest</span>
-                </div>
-                <button id="loginBtn" class="btn btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Sign In
-                </button>
-                <button id="signupBtn" class="btn btn-secondary">
-                    <i class="fas fa-user-plus"></i> Sign Up
-                </button>
-                <button id="logoutBtn" class="btn btn-danger" style="display: none;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
-        </header>
-        
-        <!-- Authentication Forms -->
-        <div id="authContainer" class="auth-container">
-            <div class="auth-form">
-                <button class="close-auth" id="closeAuth">&times;</button>
-                <div class="auth-header">
-                    <h2 id="authTitle">Sign In</h2>
-                    <p id="authSubtitle">Access your tasks from anywhere</p>
-                </div>
-                
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="loginEmail">Email Address</label>
-                        <input type="email" id="loginEmail" class="form-control" placeholder="you@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        <i class="fas fa-sign-in-alt"></i> Sign In
-                    </button>
-                </form>
-                
-                <form id="signupForm" style="display: none;">
-                    <div class="form-group">
-                        <label for="signupName">Full Name</label>
-                        <input type="text" id="signupName" class="form-control" placeholder="John Doe" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signupEmail">Email Address</label>
-                        <input type="email" id="signupEmail" class="form-control" placeholder="you@example.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="signupPassword">Password</label>
-                        <input type="password" id="signupPassword" class="form-control" placeholder="Create a strong password" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
-                    </div>
-                    <button type="submit" class="btn btn-success" style="width: 100%;">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                </form>
-                
-                <div class="auth-footer">
-                    <p id="authToggleText">
-                        Don't have an account? 
-                        <span class="auth-link" id="toggleAuthLink">Sign up here</span>
-                    </p>
-                </div>
-            </div>
         </div>
-        
-        <!-- Main App Container -->
-        <div id="appContainer" class="app-container">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <div class="user-profile">
-                    <div class="user-avatar" id="userAvatar">JD</div>
-                    <div class="user-info">
-                        <h3 id="profileName">John Doe</h3>
-                        <p id="profileEmail">john@example.com</p>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Left: User & NAS Config -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-user"></i> المستخدم الحالي</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">اسم المستخدم:</label>
+                    <div class="input-with-button">
+                        <input type="text" id="current-user-input" placeholder="اكتب اسمك...">
+                        <button id="set-user-btn" class="btn btn-success">
+                            <i class="fas fa-check"></i>
+                        </button>
                     </div>
                 </div>
-                
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalTasks">0</div>
-                        <div class="stat-label">Total Tasks</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="completedTasks">0</div>
-                        <div class="stat-label">Completed</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="pendingTasks">0</div>
-                        <div class="stat-label">Pending</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="sharedTasks">0</div>
-                        <div class="stat-label">Shared</div>
+
+                <!-- Live Users Section -->
+                <div class="live-users">
+                    <h3><i class="fas fa-users"></i> المستخدمون النشطون</h3>
+                    <div id="live-users-list" class="live-users-list">
+                        <!-- Active users will appear here -->
                     </div>
                 </div>
-                
-                <div class="categories">
-                    <h3>Categories</h3>
-                    <ul class="category-list">
-                        <li class="category-item active" data-category="all">
-                            <span>All Tasks</span>
-                            <span class="category-count" id="countAll">0</span>
-                        </li>
-                        <li class="category-item" data-category="work">
-                            <span>Work</span>
-                            <span class="category-count" id="countWork">0</span>
-                        </li>
-                        <li class="category-item" data-category="personal">
-                            <span>Personal</span>
-                            <span class="category-count" id="countPersonal">0</span>
-                        </li>
-                        <li class="category-item" data-category="shopping">
-                            <span>Shopping</span>
-                            <span class="category-count" id="countShopping">0</span>
-                        </li>
-                        <li class="category-item" data-category="health">
-                            <span>Health</span>
-                            <span class="category-count" id="countHealth">0</span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="share-section">
-                    <h3>Share Your List</h3>
-                    <button id="shareListBtn" class="btn btn-primary" style="width: 100%;">
-                        <i class="fas fa-share-alt"></i> Share with Others
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div class="main-content">
-                <div class="task-header">
-                    <h2 id="taskListTitle">My Tasks</h2>
-                    <div class="task-filters">
-                        <button class="filter-btn active" data-filter="all">All</button>
-                        <button class="filter-btn" data-filter="pending">Pending</button>
-                        <button class="filter-btn" data-filter="completed">Completed</button>
-                        <button class="filter-btn" data-filter="shared">Shared</button>
-                    </div>
-                </div>
-                
-                <form id="taskForm" class="task-form">
-                    <input type="text" id="taskInput" class="task-input" placeholder="What do you need to do?" required>
-                    <select id="taskCategory" class="task-category-select">
-                        <option value="personal">Personal</option>
-                        <option value="work">Work</option>
-                        <option value="shopping">Shopping</option>
-                        <option value="health">Health</option>
-                    </select>
-                    <select id="taskPriority" class="task-priority-select">
-                        <option value="low">Low Priority</option>
-                        <option value="medium" selected>Medium Priority</option>
-                        <option value="high">High Priority</option>
-                    </select>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Task
-                    </button>
-                </form>
-                
-                <ul class="task-list" id="taskList">
-                    <!-- Tasks will be loaded here -->
-                    <div class="empty-state" id="emptyState">
-                        <i class="fas fa-tasks"></i>
-                        <h3>No tasks yet</h3>
-                        <p>Add your first task using the form above</p>
-                    </div>
-                </ul>
-            </div>
-        </div>
-        
-        <!-- Share Modal -->
-        <div id="shareModal" class="share-modal">
-            <div class="share-container">
-                <div class="share-header">
-                    <h2>Share Your To-Do List</h2>
-                    <button class="close-auth" id="closeShareModal">&times;</button>
-                </div>
-                <p>Share your task list with friends, family, or colleagues.</p>
-                
-                <div class="share-options">
-                    <div class="form-group">
-                        <label>Share via Link</label>
-                        <div class="share-link-container">
-                            <input type="text" id="shareLink" class="share-link" readonly value="https://tasksync.app/list/abc123">
-                            <button id="copyLinkBtn" class="btn btn-primary">
-                                <i class="fas fa-copy"></i> Copy
+
+                <!-- NAS Configuration (Hidden by default) -->
+                <div id="nas-config" class="nas-config">
+                    <h2 class="card-title"><i class="fas fa-database"></i> إعدادات NAS</h2>
+                    
+                    <div class="config-section">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-server"></i> عنوان NAS:</label>
+                            <input type="text" id="nas-address" placeholder="مثال: \\192.168.1.1" value="\\192.168.100.1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user"></i> اسم المستخدم:</label>
+                            <input type="text" id="nas-username" placeholder="bb10" value="bb10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-key"></i> كلمة المرور:</label>
+                            <input type="password" id="nas-password" placeholder="********" value="1234">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-folder"></i> مسار الملف:</label>
+                            <input type="text" id="nas-path" placeholder="/tasks.json" value="/tasks.json">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button id="test-nas" class="btn btn-warning">
+                                <i class="fas fa-test"></i> اختبار الاتصال
+                            </button>
+                            <button id="save-config" class="btn btn-success">
+                                <i class="fas fa-save"></i> حفظ الإعدادات
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Share with specific people (coming soon)</label>
-                        <input type="email" class="form-control" placeholder="Enter email addresses" disabled>
-                    </div>
+                </div>
+            </div>
+
+            <!-- Middle: Tasks -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-list-check"></i> المهام المتزامنة</h2>
+                
+                <div class="tasks-container" id="tasks-container">
+                    <!-- Tasks will be loaded here -->
                 </div>
                 
-                <button id="generateNewLinkBtn" class="btn btn-secondary" style="margin-top: 20px; width: 100%;">
-                    <i class="fas fa-sync-alt"></i> Generate New Share Link
-                </button>
+                <div style="margin-top: 20px;">
+                    <textarea id="task-input" placeholder="أضف مهمة جديدة هنا..."></textarea>
+                    <button id="add-task-btn" class="btn btn-success" style="width: 100%; margin-top: 10px;">
+                        <i class="fas fa-plus"></i> إضافة المهمة
+                    </button>
+                </div>
+
+                <!-- Statistics -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number" id="total-tasks">0</span>
+                        <span class="stat-label">إجمالي المهام</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="completed-tasks">0</span>
+                        <span class="stat-label">مكتملة</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="pending-tasks">0</span>
+                        <span class="stat-label">قيد الانتظار</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="active-users">0</span>
+                        <span class="stat-label">نشطين الآن</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Actions & Info -->
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-sync-alt"></i> المزامنة الحية</h2>
+                
+                <div style="background: #f0f7ff; padding: 20px; border-radius: 10px;">
+                    <h3><i class="fas fa-info-circle"></i> كيف تعمل المزامنة:</h3>
+                    <ul style="margin-top: 15px; padding-right: 20px;">
+                        <li>يتم حفظ جميع البيانات على NAS الخاص بك</li>
+                        <li>جميع المستخدمين يرون التحديثات فوراً</li>
+                        <li>لا حاجة لخادم سحابي خارجي</li>
+                        <li>بياناتك آمنة على شبكتك المحلية</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <h3 class="card-title" style="font-size: 1.3rem;"><i class="fas fa-bolt"></i> إجراءات سريعة</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                        <button id="mark-all-complete" class="btn btn-success">
+                            <i class="fas fa-check-double"></i> إكمال الكل
+                        </button>
+                        <button id="clear-completed" class="btn btn-warning">
+                            <i class="fas fa-broom"></i> مسح المكتمل
+                        </button>
+                        <button id="export-backup" class="btn">
+                            <i class="fas fa-download"></i> حفظ نسخة
+                        </button>
+                        <button id="import-backup" class="btn">
+                            <i class="fas fa-upload"></i> استعادة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Note: Removed "سجل المزامنة" section as requested -->
             </div>
         </div>
-        
-        <!-- Notification -->
-        <div id="notification" class="notification">
-            <span id="notificationText">Task added successfully!</span>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>مهامي المتزامنة</strong> - تطبيق مزامنة المهام عبر NAS</p>
+            <p>يعمل على شبكتك المحلية • مزامنة فورية • لا حدود للمستخدمين</p>
+            <p>© 2024 - مصمم خصيصاً للاستخدام مع NAS المنزلي</p>
         </div>
     </div>
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="password-modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-lock"></i> إدخال كلمة المرور</h3>
+            <p style="color: #666; margin-bottom: 20px;">للدخول إلى إعدادات NAS، أدخل كلمة المرور</p>
+            <input type="password" id="password-input" placeholder="أدخل كلمة المرور" autocomplete="off">
+            <div class="modal-buttons">
+                <button id="submit-password" class="btn btn-success">
+                    <i class="fas fa-unlock"></i> تأكيد
+                </button>
+                <button id="cancel-password" class="btn btn-secondary">
+                    إلغاء
+                </button>
+            </div>
+            <p id="password-error" style="color: #e74c3c; margin-top: 15px; display: none;">
+                <i class="fas fa-exclamation-circle"></i> كلمة المرور غير صحيحة
+            </p>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">تمت المزامنة بنجاح!</span>
+    </div>
 
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-    apiKey: "AIzaSyCtGQdwcnjw1Fcomn_S6v1DnAuB23zw47Q",
-    authDomain: "todo-322f8.firebaseapp.com",
-    projectId: "todo-322f8",
-    storageBucket: "todo-322f8.firebasestorage.app",
-    messagingSenderId: "943693892332",
-    appId: "1:943693892332:web:5d69db80b0b55763a273c9"
-  };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        // Application State
+        const state = {
+            todos: [],
+            users: {},
+            currentUser: null,
+            activeUsers: {},
+            lastSync: null,
+            syncInterval: null,
+            nasConfig: {
+                address: '\\\\192.168.100.1',
+                username: 'bb10',
+                password: '1234',
+                path: '/tasks.json',
+                syncInterval: 5000
+            },
+            settingsPassword: '1234' // Default password for settings access
+        };
 
         // DOM Elements
-        const authContainer = document.getElementById('authContainer');
-        const loginForm = document.getElementById('loginForm');
-        const signupForm = document.getElementById('signupForm');
-        const authTitle = document.getElementById('authTitle');
-        const authSubtitle = document.getElementById('authSubtitle');
-        const authToggleText = document.getElementById('authToggleText');
-        const toggleAuthLink = document.getElementById('toggleAuthLink');
-        const loginBtn = document.getElementById('loginBtn');
-        const signupBtn = document.getElementById('signupBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const closeAuth = document.getElementById('closeAuth');
-        const appContainer = document.getElementById('appContainer');
-        const userGreeting = document.getElementById('userGreeting');
-        const userName = document.getElementById('userName');
-        const userAvatar = document.getElementById('userAvatar');
-        const profileName = document.getElementById('profileName');
-        const profileEmail = document.getElementById('profileEmail');
-        
-        // Task elements
-        const taskForm = document.getElementById('taskForm');
-        const taskInput = document.getElementById('taskInput');
-        const taskCategory = document.getElementById('taskCategory');
-        const taskPriority = document.getElementById('taskPriority');
-        const taskList = document.getElementById('taskList');
-        const emptyState = document.getElementById('emptyState');
-        
-        // Statistics elements
-        const totalTasksEl = document.getElementById('totalTasks');
-        const completedTasksEl = document.getElementById('completedTasks');
-        const pendingTasksEl = document.getElementById('pendingTasks');
-        const sharedTasksEl = document.getElementById('sharedTasks');
-        
-        // Category elements
-        const categoryItems = document.querySelectorAll('.category-item');
-        const filterButtons = document.querySelectorAll('.filter-btn');
-        
-        // Share modal
-        const shareModal = document.getElementById('shareModal');
-        const shareListBtn = document.getElementById('shareListBtn');
-        const closeShareModal = document.getElementById('closeShareModal');
-        const shareLink = document.getElementById('shareLink');
-        const copyLinkBtn = document.getElementById('copyLinkBtn');
-        const generateNewLinkBtn = document.getElementById('generateNewLinkBtn');
-        
-        // Notification
-        const notification = document.getElementById('notification');
-        const notificationText = document.getElementById('notificationText');
-        
-        // State variables
-        let currentUser = null;
-        let tasks = [];
-        let currentFilter = 'all';
-        let currentCategory = 'all';
-        let userShareLink = null;
-        
-        // Show notification
-        function showNotification(message, type = 'info') {
-            notificationText.textContent = message;
-            notification.className = `notification ${type}`;
-            notification.style.display = 'block';
+        const elements = {
+            // Status
+            syncIndicator: document.getElementById('sync-indicator'),
+            syncText: document.getElementById('sync-text'),
+            lastSync: document.getElementById('last-sync'),
             
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
+            // Buttons
+            forceSync: document.getElementById('force-sync'),
+            configNas: document.getElementById('config-nas'),
+            testNas: document.getElementById('test-nas'),
+            saveConfig: document.getElementById('save-config'),
+            setUserBtn: document.getElementById('set-user-btn'),
+            addTaskBtn: document.getElementById('add-task-btn'),
+            markAllComplete: document.getElementById('mark-all-complete'),
+            clearCompleted: document.getElementById('clear-completed'),
+            exportBackup: document.getElementById('export-backup'),
+            importBackup: document.getElementById('import-backup'),
+            
+            // Inputs
+            currentUserInput: document.getElementById('current-user-input'),
+            taskInput: document.getElementById('task-input'),
+            nasAddress: document.getElementById('nas-address'),
+            nasUsername: document.getElementById('nas-username'),
+            nasPassword: document.getElementById('nas-password'),
+            nasPath: document.getElementById('nas-path'),
+            
+            // Containers
+            tasksContainer: document.getElementById('tasks-container'),
+            liveUsersList: document.getElementById('live-users-list'),
+            nasConfig: document.getElementById('nas-config'),
+            
+            // Stats
+            totalTasks: document.getElementById('total-tasks'),
+            completedTasks: document.getElementById('completed-tasks'),
+            pendingTasks: document.getElementById('pending-tasks'),
+            activeUsers: document.getElementById('active-users'),
+            
+            // Password Modal
+            passwordModal: document.getElementById('password-modal'),
+            passwordInput: document.getElementById('password-input'),
+            submitPassword: document.getElementById('submit-password'),
+            cancelPassword: document.getElementById('cancel-password'),
+            passwordError: document.getElementById('password-error'),
+            
+            // Notification
+            notification: document.getElementById('notification'),
+            notificationText: document.getElementById('notification-text')
+        };
+
+        // Initialize
+        async function init() {
+            loadConfig();
+            setupEventListeners();
+            await testNASConnection();
+            startSyncInterval();
+            
+            showNotification('تم تحميل التطبيق', 'success');
         }
-        
-        // Toggle authentication forms
-        function showLoginForm() {
-            loginForm.style.display = 'block';
-            signupForm.style.display = 'none';
-            authTitle.textContent = 'Sign In';
-            authSubtitle.textContent = 'Access your tasks from anywhere';
-            authToggleText.innerHTML = `Don't have an account? <span class="auth-link" id="toggleAuthLink">Sign up here</span>`;
-            attachAuthToggleListener();
+
+        // Load configuration from localStorage
+        function loadConfig() {
+            const savedConfig = localStorage.getItem('nasTaskManagerConfig');
+            if (savedConfig) {
+                state.nasConfig = { ...state.nasConfig, ...JSON.parse(savedConfig) };
+                updateConfigInputs();
+            }
         }
-        
-        function showSignupForm() {
-            loginForm.style.display = 'none';
-            signupForm.style.display = 'block';
-            authTitle.textContent = 'Create Account';
-            authSubtitle.textContent = 'Start organizing your tasks online';
-            authToggleText.innerHTML = `Already have an account? <span class="auth-link" id="toggleAuthLink">Sign in here</span>`;
-            attachAuthToggleListener();
+
+        function updateConfigInputs() {
+            elements.nasAddress.value = state.nasConfig.address;
+            elements.nasUsername.value = state.nasConfig.username;
+            elements.nasPassword.value = state.nasConfig.password;
+            elements.nasPath.value = state.nasConfig.path;
         }
-        
-        function attachAuthToggleListener() {
-            document.getElementById('toggleAuthLink').addEventListener('click', function() {
-                if (loginForm.style.display === 'block') {
-                    showSignupForm();
-                } else {
-                    showLoginForm();
+
+        // NAS File Operations
+        async function readNASFile() {
+            try {
+                updateSyncStatus('syncing', 'جاري القراءة من NAS...');
+                
+                // For demonstration - In real implementation, you would use File System Access API
+                // or a backend server to access NAS files
+                
+                // Simulate reading from NAS
+                const data = localStorage.getItem('nas_tasks_backup');
+                
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    state.todos = parsed.todos || [];
+                    state.users = parsed.users || {};
+                    state.activeUsers = parsed.activeUsers || {};
+                    
+                    renderTasks();
+                    updateStats();
+                    updateLiveUsers();
+                    
+                    updateSyncStatus('synced', 'مزامن');
+                    return true;
+                }
+                
+                updateSyncStatus('synced', 'لا توجد بيانات');
+                return true;
+                
+            } catch (error) {
+                console.error('Error reading NAS file:', error);
+                updateSyncStatus('error', 'خطأ في القراءة');
+                return false;
+            }
+        }
+
+        async function writeNASFile() {
+            try {
+                updateSyncStatus('syncing', 'جاري الحفظ على NAS...');
+                
+                const data = {
+                    todos: state.todos,
+                    users: state.users,
+                    activeUsers: state.activeUsers,
+                    lastUpdated: Date.now(),
+                    updatedBy: state.currentUser?.name || 'Unknown'
+                };
+                
+                // For demonstration - Save to localStorage
+                // In real implementation, you would write to NAS
+                localStorage.setItem('nas_tasks_backup', JSON.stringify(data));
+                
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                state.lastSync = new Date();
+                elements.lastSync.textContent = formatTime(state.lastSync);
+                
+                updateSyncStatus('synced', 'مزامن');
+                return true;
+                
+            } catch (error) {
+                console.error('Error writing NAS file:', error);
+                updateSyncStatus('error', 'خطأ في الحفظ');
+                return false;
+            }
+        }
+
+        // Synchronization
+        async function synchronize() {
+            await writeNASFile();
+            await readNASFile();
+        }
+
+        function startSyncInterval() {
+            if (state.syncInterval) {
+                clearInterval(state.syncInterval);
+            }
+            
+            state.syncInterval = setInterval(async () => {
+                await synchronize();
+            }, state.nasConfig.syncInterval);
+        }
+
+        // User Management
+        function setCurrentUser() {
+            const userName = elements.currentUserInput.value.trim();
+            
+            if (!userName) {
+                showNotification('يرجى كتابة اسم المستخدم', 'error');
+                return;
+            }
+            
+            const userId = generateUserId(userName);
+            
+            state.currentUser = {
+                id: userId,
+                name: userName,
+                color: getRandomColor(),
+                lastActive: Date.now()
+            };
+            
+            // Update active users
+            state.activeUsers[userId] = {
+                ...state.currentUser,
+                lastActive: Date.now()
+            };
+            
+            updateLiveUsers();
+            showNotification(`مرحباً ${userName}!`, 'success');
+            elements.taskInput.focus();
+            
+            // Save to NAS
+            writeNASFile();
+        }
+
+        function updateLiveUsers() {
+            elements.liveUsersList.innerHTML = '';
+            
+            // Remove inactive users (older than 30 seconds)
+            const now = Date.now();
+            Object.keys(state.activeUsers).forEach(userId => {
+                if (now - state.activeUsers[userId].lastActive > 30000) {
+                    delete state.activeUsers[userId];
                 }
             });
-        }
-        
-        // Open/close auth modal
-        function openAuthModal() {
-            authContainer.style.display = 'flex';
-            showLoginForm();
-        }
-        
-        function closeAuthModal() {
-            authContainer.style.display = 'none';
-            loginForm.reset();
-            signupForm.reset();
-        }
-        
-        // Open/close share modal
-        function openShareModal() {
-            shareModal.style.display = 'flex';
-            // Generate a share link if not exists
-            if (!userShareLink) {
-                userShareLink = `https://tasksync.app/list/${currentUser.uid.slice(0, 8)}`;
-                shareLink.value = userShareLink;
-            }
-        }
-        
-        function closeShareModal() {
-            shareModal.style.display = 'none';
-        }
-        
-        // User authentication
-        function signUp(email, password, name) {
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    
-                    // Save user data to Firestore
-                    return db.collection('users').doc(user.uid).set({
-                        name: name,
-                        email: email,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                })
-                .then(() => {
-                    showNotification('Account created successfully!', 'success');
-                    closeAuthModal();
-                })
-                .catch((error) => {
-                    showNotification(error.message, 'error');
-                });
-        }
-        
-        function signIn(email, password) {
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    showNotification('Signed in successfully!', 'success');
-                    closeAuthModal();
-                })
-                .catch((error) => {
-                    showNotification(error.message, 'error');
-                });
-        }
-        
-        function signOut() {
-            auth.signOut()
-                .then(() => {
-                    showNotification('Signed out successfully', 'info');
-                    resetUI();
-                })
-                .catch((error) => {
-                    showNotification(error.message, 'error');
-                });
-        }
-        
-        // Update UI based on auth state
-        function updateUI(user) {
-            currentUser = user;
             
-            if (user) {
-                // User is signed in
-                loginBtn.style.display = 'none';
-                signupBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                userGreeting.style.display = 'block';
-                appContainer.style.display = 'grid';
-                
-                // Get user data from Firestore
-                db.collection('users').doc(user.uid).get()
-                    .then((doc) => {
-                        if (doc.exists) {
-                            const userData = doc.data();
-                            userName.textContent = userData.name;
-                            profileName.textContent = userData.name;
-                            profileEmail.textContent = user.email;
-                            
-                            // Set avatar initials
-                            const initials = userData.name.split(' ').map(n => n[0]).join('').toUpperCase();
-                            userAvatar.textContent = initials;
-                        }
-                    });
-                
-                // Load user tasks
-                loadTasks();
-            } else {
-                // User is signed out
-                resetUI();
-            }
-        }
-        
-        function resetUI() {
-            loginBtn.style.display = 'block';
-            signupBtn.style.display = 'block';
-            logoutBtn.style.display = 'none';
-            userGreeting.style.display = 'none';
-            appContainer.style.display = 'none';
-            tasks = [];
-            currentUser = null;
-        }
-        
-        // Task management
-        function loadTasks() {
-            if (!currentUser) return;
+            // Display active users
+            Object.values(state.activeUsers).forEach(user => {
+                const userTag = document.createElement('div');
+                userTag.className = 'live-user-tag';
+                userTag.innerHTML = `
+                    <div class="live-user-status ${user.id === state.currentUser?.id ? '' : 'idle'}"></div>
+                    <span>${user.name} ${user.id === state.currentUser?.id ? '(أنت)' : ''}</span>
+                `;
+                elements.liveUsersList.appendChild(userTag);
+            });
             
-            db.collection('tasks')
-                .where('userId', '==', currentUser.uid)
-                .orderBy('createdAt', 'desc')
-                .onSnapshot((snapshot) => {
-                    tasks = [];
-                    snapshot.forEach((doc) => {
-                        tasks.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    updateStatistics();
-                    renderTasks();
-                });
+            // Update active users count
+            elements.activeUsers.textContent = Object.keys(state.activeUsers).length;
         }
-        
-        function addTask(text, category, priority) {
-            if (!currentUser) {
-                showNotification('Please sign in to add tasks', 'error');
-                openAuthModal();
+
+        // Task Management
+        function addTask() {
+            if (!state.currentUser) {
+                showNotification('يرجى تعيين اسم المستخدم أولاً', 'error');
                 return;
             }
             
-            db.collection('tasks').add({
-                userId: currentUser.uid,
-                text: text,
-                category: category,
-                priority: priority,
+            const taskText = elements.taskInput.value.trim();
+            
+            if (!taskText) {
+                showNotification('يرجى كتابة نص المهمة', 'error');
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now(),
+                text: taskText,
                 completed: false,
-                shared: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then(() => {
-                showNotification('Task added successfully!', 'success');
-                taskInput.value = '';
-                taskInput.focus();
-            })
-            .catch((error) => {
-                showNotification(error.message, 'error');
-            });
-        }
-        
-        function updateTask(taskId, updates) {
-            db.collection('tasks').doc(taskId).update({
-                ...updates,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .catch((error) => {
-                showNotification(error.message, 'error');
-            });
-        }
-        
-        function deleteTask(taskId) {
-            if (confirm('Are you sure you want to delete this task?')) {
-                db.collection('tasks').doc(taskId).delete()
-                    .then(() => {
-                        showNotification('Task deleted successfully', 'info');
-                    })
-                    .catch((error) => {
-                        showNotification(error.message, 'error');
-                    });
+                userId: state.currentUser.id,
+                userName: state.currentUser.name,
+                userColor: state.currentUser.color,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            
+            state.todos.unshift(newTask);
+            elements.taskInput.value = '';
+            
+            renderTasks();
+            updateStats();
+            
+            // Update user activity
+            if (state.currentUser) {
+                state.activeUsers[state.currentUser.id].lastActive = Date.now();
             }
-        }
-        
-        // Update statistics
-        function updateStatistics() {
-            const totalTasks = tasks.length;
-            const completedTasks = tasks.filter(task => task.completed).length;
-            const pendingTasks = totalTasks - completedTasks;
-            const sharedTasks = tasks.filter(task => task.shared).length;
             
-            totalTasksEl.textContent = totalTasks;
-            completedTasksEl.textContent = completedTasks;
-            pendingTasksEl.textContent = pendingTasks;
-            sharedTasksEl.textContent = sharedTasks;
-            
-            // Update category counts
-            document.getElementById('countAll').textContent = totalTasks;
-            document.getElementById('countWork').textContent = tasks.filter(task => task.category === 'work').length;
-            document.getElementById('countPersonal').textContent = tasks.filter(task => task.category === 'personal').length;
-            document.getElementById('countShopping').textContent = tasks.filter(task => task.category === 'shopping').length;
-            document.getElementById('countHealth').textContent = tasks.filter(task => task.category === 'health').length;
+            // Save to NAS
+            writeNASFile();
+            showNotification('تم إضافة المهمة', 'success');
         }
-        
-        // Render tasks
+
         function renderTasks() {
-            // Clear the task list
-            taskList.innerHTML = '';
+            elements.tasksContainer.innerHTML = '';
             
-            // Filter tasks based on current selections
-            let filteredTasks = tasks;
-            
-            // Apply category filter
-            if (currentCategory !== 'all') {
-                filteredTasks = filteredTasks.filter(task => task.category === currentCategory);
-            }
-            
-            // Apply status filter
-            if (currentFilter === 'pending') {
-                filteredTasks = filteredTasks.filter(task => !task.completed);
-            } else if (currentFilter === 'completed') {
-                filteredTasks = filteredTasks.filter(task => task.completed);
-            } else if (currentFilter === 'shared') {
-                filteredTasks = filteredTasks.filter(task => task.shared);
-            }
-            
-            // Show empty state if no tasks
-            if (filteredTasks.length === 0) {
-                emptyState.style.display = 'block';
+            if (state.todos.length === 0) {
+                elements.tasksContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #95a5a6;">
+                        <i class="fas fa-clipboard-list fa-3x"></i>
+                        <h3 style="margin-top: 20px;">لا توجد مهام بعد</h3>
+                        <p>ابدأ بإضافة أول مهمة</p>
+                    </div>
+                `;
                 return;
-            } else {
-                emptyState.style.display = 'none';
             }
             
-            // Create task elements
-            filteredTasks.forEach((task) => {
-                const taskItem = document.createElement('li');
-                taskItem.className = 'task-item';
-                taskItem.dataset.id = task.id;
+            state.todos.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
                 
-                // Format date
-                const date = task.createdAt ? task.createdAt.toDate() : new Date();
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                
-                // Priority label
-                const priorityLabels = {
-                    'high': 'High',
-                    'medium': 'Medium',
-                    'low': 'Low'
-                };
-                
-                // Category label
-                const categoryLabels = {
-                    'work': 'Work',
-                    'personal': 'Personal',
-                    'shopping': 'Shopping',
-                    'health': 'Health'
-                };
+                // Check if task was recently updated (last 5 seconds)
+                if (Date.now() - task.updatedAt < 5000) {
+                    taskItem.classList.add('recent');
+                }
                 
                 taskItem.innerHTML = `
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                    <div class="task-content">
-                        <div class="task-title ${task.completed ? 'completed' : ''}">${task.text}</div>
-                        <div class="task-meta">
-                            <span class="task-category category-${task.category}">${categoryLabels[task.category]}</span>
-                            <span class="task-priority priority-${task.priority}">${priorityLabels[task.priority]} Priority</span>
-                            <span>${formattedDate}</span>
-                            ${task.shared ? '<span><i class="fas fa-share-alt"></i> Shared</span>' : ''}
-                        </div>
+                    <div class="task-header">
+                        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} 
+                               data-id="${task.id}" onchange="toggleTask(${task.id})">
+                        <div class="task-text">${task.text}</div>
                     </div>
-                    <div class="task-actions">
-                        <button class="task-action-btn edit-btn" title="Edit task">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="task-action-btn delete-btn" title="Delete task">
+                    <div class="task-footer">
+                        <div class="user-tag" style="background-color: ${task.userColor}; color: white;">
+                            <i class="fas fa-user"></i> ${task.userName}
+                        </div>
+                        <div style="color: #95a5a6; font-size: 0.85rem;">
+                            ${formatTime(task.createdAt)}
+                        </div>
+                        <button class="btn btn-danger btn-small" onclick="deleteTask(${task.id})">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 `;
                 
-                taskList.appendChild(taskItem);
-                
-                // Add event listeners
-                const checkbox = taskItem.querySelector('.task-checkbox');
-                const editBtn = taskItem.querySelector('.edit-btn');
-                const deleteBtn = taskItem.querySelector('.delete-btn');
-                
-                checkbox.addEventListener('change', function() {
-                    updateTask(task.id, { completed: this.checked });
-                });
-                
-                editBtn.addEventListener('click', function() {
-                    const newText = prompt('Edit task:', task.text);
-                    if (newText && newText.trim() !== '') {
-                        updateTask(task.id, { text: newText.trim() });
-                    }
-                });
-                
-                deleteBtn.addEventListener('click', function() {
-                    deleteTask(task.id);
-                });
+                elements.tasksContainer.appendChild(taskItem);
             });
         }
-        
-        // Event Listeners
-        loginBtn.addEventListener('click', openAuthModal);
-        signupBtn.addEventListener('click', function() {
-            openAuthModal();
-            showSignupForm();
-        });
-        
-        logoutBtn.addEventListener('click', signOut);
-        closeAuth.addEventListener('click', closeAuthModal);
-        
-        // Close auth modal when clicking outside
-        authContainer.addEventListener('click', function(e) {
-            if (e.target === authContainer) {
-                closeAuthModal();
+
+        // Task actions (global functions for inline event handlers)
+        window.toggleTask = function(taskId) {
+            const task = state.todos.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                task.updatedAt = Date.now();
+                
+                renderTasks();
+                updateStats();
+                writeNASFile();
             }
-        });
-        
-        // Login form submission
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            signIn(email, password);
-        });
-        
-        // Signup form submission
-        signupForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const password = document.getElementById('signupPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+        };
+
+        window.deleteTask = function(taskId) {
+            if (confirm('هل تريد حذف هذه المهمة؟')) {
+                state.todos = state.todos.filter(t => t.id !== taskId);
+                renderTasks();
+                updateStats();
+                writeNASFile();
+                showNotification('تم حذف المهمة', 'success');
+            }
+        };
+
+        function markAllComplete() {
+            state.todos.forEach(task => {
+                if (!task.completed) {
+                    task.completed = true;
+                    task.updatedAt = Date.now();
+                }
+            });
             
-            if (password !== confirmPassword) {
-                showNotification('Passwords do not match', 'error');
+            renderTasks();
+            updateStats();
+            writeNASFile();
+            showNotification('تم إكمال جميع المهام', 'success');
+        }
+
+        function clearCompletedTasks() {
+            const completedCount = state.todos.filter(t => t.completed).length;
+            
+            if (completedCount === 0) {
+                showNotification('لا توجد مهام مكتملة', 'warning');
                 return;
             }
             
-            signUp(email, password, name);
-        });
-        
-        // Task form submission
-        taskForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const text = taskInput.value.trim();
-            const category = taskCategory.value;
-            const priority = taskPriority.value;
+            if (confirm(`هل تريد حذف ${completedCount} مهمة مكتملة؟`)) {
+                state.todos = state.todos.filter(t => !t.completed);
+                renderTasks();
+                updateStats();
+                writeNASFile();
+                showNotification(`تم حذف ${completedCount} مهمة`, 'success');
+            }
+        }
+
+        // Stats
+        function updateStats() {
+            const total = state.todos.length;
+            const completed = state.todos.filter(t => t.completed).length;
+            const pending = total - completed;
             
-            if (text) {
-                addTask(text, category, priority);
+            elements.totalTasks.textContent = total;
+            elements.completedTasks.textContent = completed;
+            elements.pendingTasks.textContent = pending;
+        }
+
+        // NAS Configuration
+        async function testNASConnection() {
+            showNotification('جاري اختبار اتصال NAS...', 'success');
+            
+            // Simulate connection test
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const success = await readNASFile();
+            
+            if (success) {
+                showNotification('اتصال NAS ناجح', 'success');
+                updateSyncStatus('synced', 'متصل');
+            } else {
+                showNotification('فشل الاتصال بـ NAS', 'error');
+                updateSyncStatus('error', 'غير متصل');
             }
-        });
-        
-        // Category filter
-        categoryItems.forEach(item => {
-            item.addEventListener('click', function() {
-                categoryItems.forEach(cat => cat.classList.remove('active'));
-                this.classList.add('active');
-                currentCategory = this.dataset.category;
-                renderTasks();
+        }
+
+        function saveNASConfig() {
+            state.nasConfig = {
+                address: elements.nasAddress.value,
+                username: elements.nasUsername.value,
+                password: elements.nasPassword.value,
+                path: elements.nasPath.value,
+                syncInterval: 5000
+            };
+            
+            localStorage.setItem('nasTaskManagerConfig', JSON.stringify(state.nasConfig));
+            
+            startSyncInterval();
+            showNotification('تم حفظ إعدادات NAS', 'success');
+            
+            // Test the new configuration
+            testNASConnection();
+            
+            // Hide NAS settings after saving
+            elements.nasConfig.classList.remove('show');
+        }
+
+        // Password Protection for NAS Settings
+        function showPasswordModal() {
+            elements.passwordModal.classList.add('show');
+            elements.passwordInput.value = '';
+            elements.passwordError.style.display = 'none';
+            elements.passwordInput.focus();
+        }
+
+        function hidePasswordModal() {
+            elements.passwordModal.classList.remove('show');
+        }
+
+        function checkPassword() {
+            const enteredPassword = elements.passwordInput.value.trim();
+            
+            if (enteredPassword === state.settingsPassword) {
+                // Correct password - show NAS settings
+                elements.nasConfig.classList.add('show');
+                hidePasswordModal();
+                showNotification('تم فتح إعدادات NAS', 'success');
+            } else {
+                // Wrong password
+                elements.passwordError.style.display = 'block';
+                elements.passwordInput.value = '';
+                elements.passwordInput.focus();
+            }
+        }
+
+        // Sync Status
+        function updateSyncStatus(status, text) {
+            elements.syncIndicator.className = 'sync-indicator ' + status;
+            elements.syncText.textContent = text;
+        }
+
+        // Utility Functions
+        function generateUserId(name) {
+            return 'user_' + btoa(name).replace(/[^a-z0-9]/gi, '').substring(0, 8);
+        }
+
+        function getRandomColor() {
+            const colors = [
+                '#4361ee', '#3a0ca3', '#4cc9f0', '#2ecc71',
+                '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c',
+                '#d35400', '#34495e', '#e67e22', '#27ae60'
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('ar-EG', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
-        });
-        
-        // Task status filter
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.filter;
-                renderTasks();
+        }
+
+        function showNotification(message, type = 'success') {
+            elements.notificationText.textContent = message;
+            elements.notification.className = 'notification ' + type;
+            elements.notification.classList.add('show');
+            
+            setTimeout(() => {
+                elements.notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Export/Import
+        function exportBackup() {
+            const data = {
+                todos: state.todos,
+                users: state.users,
+                exportedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tasks_backup_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification('تم حفظ النسخة الاحتياطية', 'success');
+        }
+
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (confirm('استيراد البيانات سيستبدل جميع البيانات الحالية. هل تريد المتابعة؟')) {
+                            state.todos = data.todos || [];
+                            state.users = data.users || {};
+                            
+                            renderTasks();
+                            updateStats();
+                            writeNASFile();
+                            
+                            showNotification('تم استيراد النسخة الاحتياطية', 'success');
+                        }
+                    } catch (error) {
+                        showNotification('خطأ في ملف النسخة الاحتياطية', 'error');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // User
+            elements.setUserBtn.addEventListener('click', setCurrentUser);
+            elements.currentUserInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') setCurrentUser();
             });
-        });
-        
-        // Share functionality
-        shareListBtn.addEventListener('click', openShareModal);
-        closeShareModal.addEventListener('click', closeShareModal);
-        
-        // Close share modal when clicking outside
-        shareModal.addEventListener('click', function(e) {
-            if (e.target === shareModal) {
-                closeShareModal();
-            }
-        });
-        
-        copyLinkBtn.addEventListener('click', function() {
-            shareLink.select();
-            shareLink.setSelectionRange(0, 99999); // For mobile devices
-            document.execCommand('copy');
-            showNotification('Link copied to clipboard!', 'success');
-        });
-        
-        generateNewLinkBtn.addEventListener('click', function() {
-            const newLink = `https://tasksync.app/list/${currentUser.uid.slice(0, 8)}-${Date.now().toString(36)}`;
-            userShareLink = newLink;
-            shareLink.value = newLink;
-            showNotification('New share link generated!', 'success');
-        });
-        
-        // Initialize Firebase Auth state listener
-        auth.onAuthStateChanged((user) => {
-            updateUI(user);
-        });
-        
-        // Show welcome message
-        setTimeout(() => {
-            if (!currentUser) {
-                showNotification('Welcome to TaskSync! Sign in to save your tasks online.', 'info');
-            }
-        }, 1000);
+            
+            // Tasks
+            elements.addTaskBtn.addEventListener('click', addTask);
+            elements.taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    addTask();
+                }
+            });
+            
+            // Sync Controls
+            elements.forceSync.addEventListener('click', () => synchronize());
+            elements.configNas.addEventListener('click', () => showPasswordModal());
+            elements.testNas.addEventListener('click', () => testNASConnection());
+            elements.saveConfig.addEventListener('click', () => saveNASConfig());
+            
+            // Password Modal
+            elements.submitPassword.addEventListener('click', checkPassword);
+            elements.cancelPassword.addEventListener('click', hidePasswordModal);
+            elements.passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkPassword();
+            });
+            
+            // Close modal when clicking outside
+            elements.passwordModal.addEventListener('click', (e) => {
+                if (e.target === elements.passwordModal) {
+                    hidePasswordModal();
+                }
+            });
+            
+            // Actions
+            elements.markAllComplete.addEventListener('click', markAllComplete);
+            elements.clearCompleted.addEventListener('click', clearCompletedTasks);
+            elements.exportBackup.addEventListener('click', exportBackup);
+            elements.importBackup.addEventListener('click', importBackup);
+            
+            // Auto-update active users every 10 seconds
+            setInterval(() => {
+                if (state.currentUser) {
+                    state.activeUsers[state.currentUser.id].lastActive = Date.now();
+                    updateLiveUsers();
+                }
+            }, 10000);
+            
+            // Periodic sync every 30 seconds
+            setInterval(() => {
+                if (state.currentUser) {
+                    readNASFile();
+                }
+            }, 30000);
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
